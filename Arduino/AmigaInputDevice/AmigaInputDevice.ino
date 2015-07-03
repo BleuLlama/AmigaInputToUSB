@@ -19,6 +19,7 @@
 
 // version history
 //
+// v 003  2015-07-03  Pinout updated to mtch v1 hardware
 // v 002  2015-07-02  L/R/M mouse buttons, modes, Mouse button fix, simple acceleration
 // v 001  2015-07-02  initial version
 //
@@ -29,16 +30,16 @@
 
 	D9 pin	Mouse	Joystick	Arduino Pin
 
-	1	V	Forward		D2
-	2	H	Backward	D3
+	1	V	Forward		D6
+	2	H	Backward	D5
 	3	VQ	Left		D4
-	4	HQ	Right		D5
-	5	M But	n/c		D8
+	4	HQ	Right		D3
+	5	M But	n/c		D2
 
-	6	L But	Button 1	D6
+	6	L But	Button 1	D7
 	7	+5V			(VCC)
 	8	GND			(GND)
-	9	R But	Button 2	D7
+	9	R But	Button 2	D8
 
 	Keyboard (TBD)
 
@@ -50,22 +51,22 @@
 
 // pin configurations
 //	Mouse X and Y quadrature pins
-#define kMouseXa (3)
-#define kMouseXb (5)
-#define kMouseYa (2)
+#define kMouseXa (5)
+#define kMouseXb (3)
+#define kMouseYa (6)
 #define kMouseYb (4)
 
 
 //	Mouse buttons
-#define kMouseB1 (6)
-#define kMouseB2 (7)
-#define kMouseB3 (8)
+#define kMouseB1 (7)
+#define kMouseB2 (8)
+#define kMouseB3 (2)
 
 //	Joystick pins
-#define kJoyUp    (2)
-#define kJoyDown  (3)
+#define kJoyUp    (6)
+#define kJoyDown  (5)
 #define kJoyLeft  (4)
-#define kJoyRight (5)
+#define kJoyRight (3)
 
 // on-board LED pin
 #define kLED (17)
@@ -109,10 +110,10 @@ int historyPos=0; // current write position in the history
 void initGrayMouse( void )
 {
   // set the mouse and button inputs
-  pinMode( kMouseXa, INPUT );
-  pinMode( kMouseXb, INPUT );
-  pinMode( kMouseYa, INPUT );
-  pinMode( kMouseXb, INPUT );
+  pinMode( kMouseXa, INPUT_PULLUP );
+  pinMode( kMouseXb, INPUT_PULLUP );
+  pinMode( kMouseYa, INPUT_PULLUP );
+  pinMode( kMouseXb, INPUT_PULLUP );
   pinMode( kMouseB1, INPUT_PULLUP );
   pinMode( kMouseB2, INPUT_PULLUP );
   pinMode( kMouseB3, INPUT_PULLUP );
