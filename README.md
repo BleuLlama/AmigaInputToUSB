@@ -1,5 +1,5 @@
 # Amiga Input To USB
-This is A project to connect a Commodore Amiga mouse, joystick (Atari compatible) and eventually anAmiga Keyboard as USB HID devices.
+This is a project to connect a Commodore Amiga mouse, joystick (Atari compatible) and eventually anAmiga Keyboard as USB HID devices.
 
 # Overview
 
