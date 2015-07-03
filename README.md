@@ -42,7 +42,7 @@ and a few 10K ohm resistors.
 When plugged in, the device will appear to be a USB Keyboard, USB Mouse and 
 USB Serial Port.  (The serial port is used for configuration.)
 
-Amiga mice output quadrature for X and Y using two lines each in gray code.
+Amiga and Atari mice output quadrature for X and Y using two lines each in gray code.
 As you move positive X or Y, it outputs on two data lines the gray code 
 sequence over time: 00 01 11 10 00 and so on.  for negative movement, it 
 outputs the sequence 00 10 11 01 00 etc.  By sitting in a tight loop, we can
@@ -54,12 +54,17 @@ Mouse library.
 ## Prototype / Proof of concept (complete)
 - Simple implementation of Amiga mouse movement and button clicking
 
-## Amiga Mouse full implementation
+## Amiga Mouse full implementation (complete)
 - Left, Right Mouse button supported
 - Movement with reasonable acceleration
+- NOTE: swapping two lines XB and YA in the code will let this work for Atari mice too.
 
-## Atari Joystick as mouse
-- Joystick movement translated to Mouse movements (joymouse)
+## Atari Joystick as mouse (complete)
+- Joystick movement translated to Mouse movements (like joymouse)
+
+## Serial configuration
+- simple serial shell to change configuration parameters
+- stored in EEPROM
 
 ## Atari Joystick as keyboard
 - Joytick movements mapped as keyboard
@@ -74,7 +79,3 @@ Mouse library.
 - Support for using an Amiga keyboard as a HID USB keyboard
  - A1000, A2000, A500 keyboards all use the same protocol, but different connectors and pinouts.
  - My hardware will be made to use an A1000 keyboard
-
-Note that for multiple modes, a button and LED display will be necessary
-for indicating which mode it's in.  Or, it can use a simple serial interface
-to switch modes, storing the last mode in the micro's EEPROM.
