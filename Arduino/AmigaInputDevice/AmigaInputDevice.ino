@@ -28,6 +28,7 @@
 /*
 	hookup info (tentative)
 
+		Amiga	Atari
 	D9 pin	Mouse	Joystick	Arduino Pin
 
 	1	V	Forward		D6
@@ -45,6 +46,8 @@
 
 	NOTE: Also tie D6, D7, D8 to VCC via 10k Ohm resistor (tentative)
 
+	NOTE: for Atari mouse, pins D9.1 and D9.4 need to be swapped
+
 */
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -55,6 +58,12 @@
 #define kMouseXb (3)
 #define kMouseYa (6)
 #define kMouseYb (4)
+
+// Atari mouse
+#define kAtariMouseXa (5)
+#define kAtariMouseXb (6)
+#define kAtariMouseYa (3)
+#define kAtariMouseYb (4)
 
 
 //	Mouse buttons
@@ -295,6 +304,7 @@ void loopGrayMouse()
   static int last_vq = 0; // last v quadrature
   
   // read in the quad/gray code
+  // Atari mouse has Xb Ya swapped.
   int hq = (digitalRead( kMouseXa ) << 1) | digitalRead( kMouseXb );
   int vq = (digitalRead( kMouseYa ) << 1) | digitalRead( kMouseYb );
   

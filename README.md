@@ -17,6 +17,7 @@ It has the following supported ports:
 It supports the following schemes:
 
 - Amiga mouse as HID mouse
+- Atari mouse as HID mouse
 - Atari Joystick as HID mouse
 - Atari Joystick as HID Keyboard controls
 - Amiga Keyboard as HID Keyboard (stretch goal)
