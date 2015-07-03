@@ -87,7 +87,8 @@ void setup() {
   // put your setup code here, to run once:
   Serial.begin( 9600 );
   
-  initGrayMouse();
+  initGrayMouse();   // use this for an Amiga Mouse
+//  initJoystick();  // use this for a digital joystick (Atari Joystick)
   Mouse.begin();
   
   Serial.begin( 9600 );
@@ -110,16 +111,37 @@ int historyPos=0; // current write position in the history
 void initGrayMouse( void )
 {
   // set the mouse and button inputs
-  pinMode( kMouseXa, INPUT_PULLUP );
-  pinMode( kMouseXb, INPUT_PULLUP );
-  pinMode( kMouseYa, INPUT_PULLUP );
-  pinMode( kMouseXb, INPUT_PULLUP );
+  pinMode( kMouseXa, INPUT );
+  pinMode( kMouseXb, INPUT );
+  pinMode( kMouseYa, INPUT );
+  pinMode( kMouseXb, INPUT );
   pinMode( kMouseB1, INPUT_PULLUP );
   pinMode( kMouseB2, INPUT_PULLUP );
   pinMode( kMouseB3, INPUT_PULLUP );
   
   // set the mode
   mode = kModeGrayMouse;
+  
+  // clear the history
+  for( int h=0 ; h<128 ; h++ ) {
+    history_x[h] = history_y[h] = 0;
+  }
+}
+
+// initialize for gray code mouse 
+void initJoystick( void )
+{
+  // set the mouse and button inputs
+  pinMode( kJoyUp, INPUT_PULLUP );
+  pinMode( kJoyDown, INPUT_PULLUP );
+  pinMode( kJoyLeft, INPUT_PULLUP );
+  pinMode( kJoyRight, INPUT_PULLUP );
+  pinMode( kMouseB1, INPUT_PULLUP );
+  pinMode( kMouseB2, INPUT_PULLUP );
+  pinMode( kMouseB3, INPUT_PULLUP );
+  
+  // set the mode
+  mode = kModeJoyMouse;
   
   // clear the history
   for( int h=0 ; h<128 ; h++ ) {
@@ -188,6 +210,8 @@ void loop() {
       loopGrayMouse();
       break;
     case( kModeJoyMouse ):
+      loopJoyMouse();
+      break;
     case( kModeJoyWASD ):
     default:
       break;
@@ -300,6 +324,27 @@ void loopGrayMouse()
   if( x_accum || y_accum ) {
     Mouse.move( tx, ty, 0 );
     x_accum = y_accum = 0;
+  }
+  
+  // and check the mouse buttons too
+  handleButtonPresses();
+}
+
+void loopJoyMouse()
+{
+  int u = digitalRead( kJoyUp )?0:-1;
+  int d = digitalRead( kJoyDown )?0:1;
+  int l = digitalRead( kJoyLeft )?0:-1;
+  int r = digitalRead( kJoyRight )?0:1;
+  
+  historyPos++;
+  history_x[ (historyPos & 0x7f) ] = l+r;
+  history_y[ (historyPos & 0x7f) ] = u+d;
+  int tx = total_x() / 24;
+  int ty = total_y() / 24;
+
+  if( u | d | r | l ) { 
+    Mouse.move( tx, ty, 0 );
   }
   
   // and check the mouse buttons too
