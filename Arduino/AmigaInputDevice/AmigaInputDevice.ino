@@ -17,8 +17,10 @@
 //  No warranty blah blah blah.
 
 
+#define VERSTRING "004 2015-0704"
 // version history
 //
+// v 004  2015-07-04  Serial Control Shell
 // v 003  2015-07-03  Pinout updated to mtch v1 hardware
 // v 002  2015-07-02  L/R/M mouse buttons, modes, Mouse button fix, simple acceleration
 // v 001  2015-07-02  initial version
@@ -46,7 +48,7 @@
 
 	NOTE: Also tie D6, D7, D8 to VCC via 10k Ohm resistor (tentative)
 
-	NOTE: for Atari mouse, pins D9.1 and D9.4 need to be swapped
+	NOTE: for Atari mouse, signals on D9 pins 1 and 4 functionality are swapped
 
 */
 ////////////////////////////////////////////////////////////////////////////////
@@ -81,11 +83,13 @@
 #define kLED (17)
 
 // usage modes
-#define kModeGrayMouse (0) /* amiga mouse quad signals, to HID mouse */
-#define kModeJoyMouse  (1) /* joystick sends LRUD, convert to mouse */
-#define kModeJoyWASD   (2) /* joystick sends LRUD, convert to Arrow keys */
+#define kModeAmigaMouse (0) /* amiga mouse quad signals, to HID mouse */
+#define kModeAtariMouse (1) /* atari mouse quad signals, to HID mouse */
+#define kModeJoyMouse   (2) /* joystick sends LRUD, convert to mouse */
+#define kModeJoyWASD    (3) /* joystick sends LRUD, convert to Arrow keys */
+#define kModeJoyArrows  (4) /* joystick sends LRUD, convert to Arrow keys */
 
-int mode = kModeGrayMouse;
+int mode = kModeAmigaMouse;
 
 // ----------------------------------------
 
@@ -129,7 +133,7 @@ void initGrayMouse( void )
   pinMode( kMouseB3, INPUT_PULLUP );
   
   // set the mode
-  mode = kModeGrayMouse;
+  mode = kModeAmigaMouse;
   
   // clear the history
   for( int h=0 ; h<128 ; h++ ) {
@@ -157,6 +161,23 @@ void initJoystick( void )
     history_x[h] = history_y[h] = 0;
   }
 }
+
+void switchMode( int mmmm )
+{
+  mode = mmmm;
+  switch( mode ) {
+    case( kModeAmigaMouse ):
+    case( kModeAtariMouse ):
+      initGrayMouse();
+      break;
+
+    case( kModeJoyMouse ):
+    case( kModeJoyWASD ):
+      initJoystick();
+      break;
+  }
+}
+
 
 // provide a total of all X history values (for acceleration)
 int total_x( void )
@@ -210,12 +231,94 @@ int grayCompare( int a, int b )
   return 0;
 }
 
+void dumpMode()
+{
+  switch( mode ) {
+    case( kModeAmigaMouse ):
+      Serial.println( "Amiga mouse as HID mouse" );
+      break;
+    case( kModeAtariMouse ):
+      Serial.println( "Atari mouse as HID mouse" );
+      break;
 
+    case( kModeJoyMouse ):
+      Serial.println( "Atari joystick as HID mouse" );
+      break;
+      
+    case( kModeJoyWASD ):
+      Serial.println( "Atari joystick as WASD keys" );
+      break;
+      
+    case( kModeJoyArrows ):
+      Serial.println( "Atari joystick as Arrow keys" );
+      break;
+  }
+}
+
+// stupid serial shell to change usage mode
+void serialShell()
+{
+  while( Serial.available() ) {
+    int ch = Serial.read();
+    if( ch == '\n' ) {
+      Serial.println( "\n> " );
+      Serial.flush();
+    }
+    if( ch == '?' || ch == 'h' ) {
+      Serial.println( "Select mode (type the digit.)" );
+      Serial.println( " 0  Amiga mouse as HID mouse" );
+      Serial.println( " 1  Atari mouse as HID mouse" );
+      Serial.println( " 2  Atari joystick as HID mouse" );
+      Serial.println( " 3  Atari joystick as WASD keyboard" );
+      Serial.println( " 4  Atari joystick as arrow keys" );
+      Serial.println( "" );
+      Serial.println( " h  Help info." );
+      Serial.println( " v  Version info." );
+      Serial.println( " m  Display use mode." );
+    }
+    if( ch == 'm' ) {
+      dumpMode();
+    }
+    if( ch == 'v' ) {
+      Serial.println( "Amiga Input Device tool" );
+      Serial.print( " v" );
+      Serial.print( VERSTRING );
+      Serial.println( " (c) 2016 yorgle@gmail.com" );
+      Serial.println( " created for the 2015/07 http://retrochallenge.org" );
+    }
+    if( ch == '0' ) {
+      switchMode( kModeAmigaMouse );
+      Serial.println( "Selected 0: Amiga mouse -> HID Mouse" );
+    }
+    if( ch == '1' ) {
+      switchMode( kModeAtariMouse );
+      Serial.println( "Selected 1: Atari mouse -> HID Mouse" );
+    }
+    if( ch == '2' ) {
+      switchMode( kModeJoyMouse );
+      Serial.println( "Selected 2: Atari Joystick -> HID Mouse" );
+    }
+    if( ch == '3' ) {
+      switchMode( kModeJoyWASD );
+      Serial.println( "Selected 3: Atari Joystick -> HID WASD Keyboard" );
+    }
+    if( ch == '4' ) {
+      switchMode( kModeJoyArrows );
+      Serial.println( "Selected 4: Atari Joystick -> HID Arrows Keyboard" );
+    }
+    
+  }
+}
+
+ 
 // main loop
 void loop() {
-
+  if( Serial.available() ) {
+    serialShell();
+  }
   switch( mode ) {
-    case( kModeGrayMouse ):
+    case( kModeAmigaMouse ):
+    case( kModeAtariMouse ):
       loopGrayMouse();
       break;
     case( kModeJoyMouse ):
@@ -304,9 +407,19 @@ void loopGrayMouse()
   static int last_vq = 0; // last v quadrature
   
   // read in the quad/gray code
-  // Atari mouse has Xb Ya swapped.
-  int hq = (digitalRead( kMouseXa ) << 1) | digitalRead( kMouseXb );
-  int vq = (digitalRead( kMouseYa ) << 1) | digitalRead( kMouseYb );
+  int hq = 0;
+  int vq = 0;
+  
+  if( mode == kModeAmigaMouse ) {
+    // amiga mouse
+    hq = (digitalRead( kMouseXa ) << 1) | digitalRead( kMouseXb );
+    vq = (digitalRead( kMouseYa ) << 1) | digitalRead( kMouseYb );
+    
+  } else if( mode == kModeAtariMouse ) {
+    // atari mouse ( Xb, Ya swapped wrt Amiga mouse )
+    hq = (digitalRead( kAtariMouseXa ) << 1) | digitalRead( kAtariMouseXb );
+    vq = (digitalRead( kAtariMouseYa ) << 1) | digitalRead( kAtariMouseYb );
+  }
   
   // check horizontal delta
   if( hq != last_hq ) {
