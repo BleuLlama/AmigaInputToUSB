@@ -1,0 +1,68 @@
+This is just some additional sources that I used for features of the device.
+Joystick, Mouse support were done by me (sdl)
+What follows are additional features:
+	- HID Joystick
+	- Amiga QWERTZ/QWERTY HID support
+
+- scott 7/2015
+
+--------------------------------------------------------------------------------
+
+HID Joystick code:
+
+http://www.imaginaryindustries.com/blog/?p=80
+
+--------------------------------------------------------------------------------
+olaf QWERTZ:
+
+http://forum.arduino.cc/index.php?topic=139358.0
+
+Keyboard   Leonardo
+Connector  IO           
+
+1   KBCLK   8
+2   KBDATA  9
+3   KBRST   10
+4   5v      5v
+5   NC
+6   GND     GND
+7   LED1    5V
+8   LED2    -
+
+IBM Modifiers
+   // modifiers: Shift left, Shift right, -, Win left, Crtl left, Ctrl right, Alt left, Alt right
+     0x02, 0x20, 0x00, 0x08, 0x01, 0x10, 0x04, 0x40
+
+
+--------------------------------------------------------------------------------
+Steve Reaver's QWERTY changes
+(page 2 of the above)
+
+--------------------------------------------------------------------------------
+Koney's changes
+
+                // MORE HELP FUNCTIONS  ///////////////////////////////
+                else if (key==0x4c) keystroke(0x4b,0);  // Up = PgUp
+                else if (key==0x4d) keystroke(0x4e,0);  // Down = PgDown
+                else if (key==0x4f) keystroke(0x4a,0);  // Left = Home
+                else if (key==0x4e) keystroke(0x4d,0);  // Right = End
+                else if (key==0x46) keystroke(0x49,0);  // Help + DEL = Ins
+                else if (key==0x44) keystroke(0x46,0);  // Help + RETURN = PrtSc 2    
+                ////////////////////////////////////////////////////////
+
+help + arrows -> pgup, pgdn, home, end,
+help + del -> ins
+help + return -> printscr
+
+                
+// VOLUME KEYS //
+	else if (key==0x5e) keystroke(0x80,0);  // Help + + = VOL UP
+	else if (key==0x4a) keystroke(0x81,0);  // Help + - = VOL DOWN
+	else if (key==0x43) keystroke(0x7f,0);  // Help + enter = VOL MUTE
+
+
+using http://stefanjones.ca/blog/arduino-leonardo-remote-multimedia-keys/
+	// VOLUME KEYS //
+	else if (key==0x5e) { Remote.increase(); Remote.clear();}  // Help + + = VOL UP
+	else if (key==0x4a) { Remote.decrease(); Remote.clear();}  // Help + - = VOL DOWN
+else if (key==0x43) { Remote.mute(); Remote.clear();}      // Help + enter = VOL MUTE
