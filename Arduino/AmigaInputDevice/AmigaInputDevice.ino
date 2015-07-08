@@ -42,7 +42,7 @@
 	6	L But	Button 1	D7
 	7	+5V			(VCC)
 	8	GND			(GND)
-	9	R But	Button 2	D8
+	9	R But	Button 2	D14
 
 	Keyboard (TBD)
 
@@ -70,7 +70,7 @@
 
 //	Mouse buttons
 #define kMouseB1 (7)
-#define kMouseB2 (8)
+#define kMouseB2 (14)
 #define kMouseB3 (2)
 
 //	Joystick pins
@@ -89,7 +89,7 @@
 #define kModeJoyWASD    (3) /* joystick sends LRUD, convert to Arrow keys */
 #define kModeJoyArrows  (4) /* joystick sends LRUD, convert to Arrow keys */
 
-int mode = kModeAmigaMouse;
+int mode = kModeJoyMouse;
 
 // ----------------------------------------
 
@@ -100,8 +100,8 @@ void setup() {
   // put your setup code here, to run once:
   Serial.begin( 9600 );
   
-  initGrayMouse();   // use this for an Amiga Mouse
-//  initJoystick();  // use this for a digital joystick (Atari Joystick)
+//  initGrayMouse();   // use this for an Amiga Mouse
+  initJoystick();  // use this for a digital joystick (Atari Joystick)
   Mouse.begin();
   
   Serial.begin( 9600 );
