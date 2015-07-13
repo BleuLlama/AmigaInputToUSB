@@ -17,9 +17,10 @@
 //  No warranty blah blah blah.
 
 
-#define VERSTRING "005 2015-0712"
+#define VERSTRING "006 2015-0713"
 // version history
 //
+// v 006  2015-07-13  Joystick-Keypress support complete with various preset configurations
 // v 005  2015-07-12  EEprom saving of settings
 // v 004  2015-07-04  Serial Control Shell
 // v 003  2015-07-03  Pinout updated to mtch v1 hardware
@@ -49,7 +50,7 @@
 
 	NOTE: Also tie D6, D7, D8 to VCC via 10k Ohm resistor (tentative)
 
-	NOTE: for Atari mouse, signals on D9 pins 1 and 4 functionality are swapped
+	NOTE: for Atari mouse, signals on D9 pins 1 and 4 functionality are swapped (in software)
 
 */
 ////////////////////////////////////////////////////////////////////////////////
@@ -70,7 +71,6 @@
 #define kAtariMouseYa (3)
 #define kAtariMouseYb (4)
 
-
 //	Mouse buttons
 #define kMouseB1 (7)
 #define kMouseB2 (14)
@@ -86,7 +86,9 @@
 #define kLED (17)
 
 /////////////////////////////
-char settings[8];
+#define kNSettings (8)
+char settings[kNSettings];
+
 // 0..2 are 'S' 'D' 'L' (Sentinel)
 #define kSettingVers (3) // settings version
 #define kSettingMode (4) // D9 Port usage mode
@@ -96,9 +98,14 @@ char settings[8];
 #define kModeAmigaMouse (0) /* amiga mouse quad signals, to HID mouse */
 #define kModeAtariMouse (1) /* atari mouse quad signals, to HID mouse */
 #define kModeJoyMouse   (2) /* joystick sends LRUD, convert to mouse */
-#define kModeJoyWASD    (3) /* joystick sends LRUD, convert to Arrow keys */
-#define kModeJoyArrows  (4) /* joystick sends LRUD, convert to Arrow keys */
 
+                            /* joystick sends LRUD... */
+#define kModeJoyFSUAE   (3) /* convert to arrow keys, right ctrl/alt */
+#define kModeJoyMame    (4) /* convert to arrow keys, left ctrl/alt */
+#define kModeJoyStella  (5) /* convert to arrow keys, space, 4, 5 */
+#define kModeJoyWASD    (6) /* convert to WASD keys */
+#define kModeJoyHJKL    (7) /* convert to vi hjkl keys */
+#define kModeMax (kModeJoyHJKL)
 
 
 // ----------------------------------------
@@ -109,12 +116,8 @@ void setup() {
   
   // put your setup code here, to run once:
   Serial.begin( 9600 );
-  
-  for( int i=0 ; i<5 ; i++ )
-  {
-    digitalWrite( kLED, HIGH ); delay( 50 );
-    digitalWrite( kLED, LOW ); delay( 50 );
-  }
+  Mouse.begin(); // for USB HID Mouse support
+  Keyboard.begin(); // for USB HID Keyboard support
   
   loadSettings();
 }
@@ -123,9 +126,8 @@ void loadSettings( void )
 {
   initGrayMouse();   // use this for an Amiga Mouse
 //  initJoystick();  // use this for a digital joystick (Atari Joystick)
-  Mouse.begin();
 
-  for( int i=0 ; i<8 ; i++ ) {
+  for( int i=0 ; i<kNSettings ; i++ ) {
     settings[i] = EEPROM.read( i );
   }
   
@@ -144,16 +146,15 @@ void defaultSettings( void )
   settings[1] = 'D';
   settings[2] = 'L';
   settings[3] = 1;   // 
-  settings[4] = 0;
-  settings[5] = 0;
-  settings[6] = 0;
-  settings[7] = 0;
+  for( int s = 4 ; s < kNSettings ; s ++ ) {
+    settings[s] = 0;
+  }
   saveSettings();
 }
 
 void saveSettings( void )
 {
-  for( int i=0 ; i<8 ; i++ ) {
+  for( int i=0 ; i<kNSettings ; i++ ) {
     EEPROM.write( i, settings[i] );
   }
 }
@@ -224,6 +225,7 @@ void switchMode( int mmmm )
 {
   settings[kSettingMode] = mmmm;
   saveSettings();
+  Keyboard.releaseAll();
   
   switch( settings[kSettingMode] ) {
     case( kModeAmigaMouse ):
@@ -231,9 +233,11 @@ void switchMode( int mmmm )
       initGrayMouse();
       break;
 
-    case( kModeJoyMouse ):
+    case( kModeJoyFSUAE ):
+    case( kModeJoyMame ):
+    case( kModeJoyStella ):
     case( kModeJoyWASD ):
-    case( kModeJoyArrows ):
+    case( kModeJoyHJKL ):
       initJoystick();
       break;
   }
@@ -295,11 +299,17 @@ int grayCompare( int a, int b )
 void dumpMode()
 {
   switch( settings[kSettingMode] ) {
+    // -> Mouse
     case( kModeAmigaMouse ): Serial.println( "Amiga mouse as HID mouse" ); break;
     case( kModeAtariMouse ): Serial.println( "Atari mouse as HID mouse" ); break;
     case( kModeJoyMouse ):   Serial.println( "Atari joystick as HID mouse" ); break;
+    
+    // -> Keyboard
+    case( kModeJoyFSUAE ):   Serial.println( "Atari Joystick as Arrow/r-ctrl/r-alt (FS-UAE, Vice)" ); break;
+    case( kModeJoyMame ):    Serial.println( "Atari Joystick as Arrow/l-ctrl/l-alt (Mame)" ); break;
+    case( kModeJoyStella ):  Serial.println( "Atari Joystick as Arrow/ /4/5 (Stella)" ); break;
     case( kModeJoyWASD ):    Serial.println( "Atari joystick as WASD keys" ); break;
-    case( kModeJoyArrows ):  Serial.println( "Atari joystick as Arrow keys" ); break;
+    case( kModeJoyHJKL ):    Serial.println( "Atari joystick as vi (hjkl) keys" ); break;
     default: break;
   }
 }
@@ -315,11 +325,16 @@ void serialShell()
     }
     if( ch == '?' || ch == 'h' ) {
       Serial.println( "Select mode (type the digit.)" );
-      Serial.println( " 0  Amiga mouse as HID mouse" );
-      Serial.println( " 1  Atari mouse as HID mouse" );
-      Serial.println( " 2  Atari joystick as HID mouse" );
-      //Serial.println( " 3  Atari joystick as WASD keyboard" );
-      //Serial.println( " 4  Atari joystick as arrow keys" );
+      Serial.println( " 0  USB Mouse output from Amiga mouse" );
+      Serial.println( " 1  USB Mouse output from Atari mouse" );
+      Serial.println( " 2  USB Mouse output from Atari joystick" );
+      
+      Serial.println( " 3  Joystick as FS-UAE/Vice Keyboard (arrows/r-ctrl/r-alt)" );
+      Serial.println( " 4  Joystick as MAME Keyboard (arrows/l-ctrl/l-alt)" );
+      Serial.println( " 5  Joystick as Stella Keyboard (arrows/ /4/5)" );
+      Serial.println( " 6  Joystick as WASD Keyboard (w/s/a/d)" );
+      Serial.println( " 7  Joystick as vi Keyboard (h/j/k/l)" );
+
       Serial.println( "" );
       Serial.println( "Other options:" );
       Serial.println( " h  Help info." );
@@ -345,7 +360,7 @@ void serialShell()
       Serial.println( " created for the 2015/07 http://retrochallenge.org" );
     }
     
-    if( ch >= ('0' + kModeAmigaMouse)  && ch <= ('0' + kModeJoyArrows ) ) {
+    if( ch >= ('0' + kModeAmigaMouse)  && ch <= ('0' + kModeMax ) ) {
       switchMode( ch - '0' );
       dumpMode();
     }    
@@ -367,8 +382,14 @@ void loop() {
     case( kModeJoyMouse ):
       loopJoyMouse();
       break;
+    case( kModeJoyFSUAE ):
+    case( kModeJoyMame ):
+    case( kModeJoyStella ):
     case( kModeJoyWASD ):
-    case( kModeJoyArrows ):
+    case( kModeJoyHJKL ):
+      loopJoyKeys();
+      break;
+      
     default:
       break;
   }
@@ -507,10 +528,10 @@ void loopGrayMouse()
 // Joystick as mouse
 void loopJoyMouse()
 {
-  int u = digitalRead( kJoyUp )?0:-1;
-  int d = digitalRead( kJoyDown )?0:1;
-  int l = digitalRead( kJoyLeft )?0:-1;
-  int r = digitalRead( kJoyRight )?0:1;
+  char u = digitalRead( kJoyUp )?0:-1;
+  char d = digitalRead( kJoyDown )?0:1;
+  char l = digitalRead( kJoyLeft )?0:-1;
+  char r = digitalRead( kJoyRight )?0:1;
   
   historyPos++;
   history_x[ (historyPos & 0x7f) ] = l+r;
@@ -524,4 +545,60 @@ void loopJoyMouse()
   
   // and check the mouse buttons too
   handleButtonPresses();
+}
+
+// compare now with previous.
+// send the key press, release, and return the current (to be assigned to previous)
+char keyHelper( char now, char previous, char sendKey )
+{
+  if( !now && previous ) {
+    // press event
+    Keyboard.press( sendKey );
+  }
+  if( now && !previous ) {
+    // release event
+    Keyboard.release( sendKey );
+  }
+  
+  return now;
+}
+
+void loopJoyKeys()
+{
+  static char lastU = 0;
+  static char lastD = 0;
+  static char lastL = 0;
+  static char lastR = 0;
+  static char lastB1 = 0;
+  static char lastB2 = 0;
+  static char lastB3 = 0;
+  char u = digitalRead( kJoyUp );
+  char d = digitalRead( kJoyDown );
+  char l = digitalRead( kJoyLeft );
+  char r = digitalRead( kJoyRight );
+  char b1 = digitalRead( kMouseB1 );
+  char b2 = digitalRead( kMouseB2 );
+  char b3 = digitalRead( kMouseB3 );
+
+  // ref: https://www.arduino.cc/en/Reference/KeyboardModifiers
+  char* moves = "UDLR123"; // filler
+  char movesWASD[]   = { 'w', 's', 'a', 'd', ' ', ' ', ' ' };  
+  char movesHJKL[]   = { 'k', 'j', 'h', 'l', KEY_ESC, KEY_ESC, KEY_ESC };
+  char movesStella[] = { KEY_UP_ARROW, KEY_DOWN_ARROW, KEY_LEFT_ARROW, KEY_RIGHT_ARROW, ' ', '4', '5' };
+  char movesMame[]   = { KEY_UP_ARROW, KEY_DOWN_ARROW, KEY_LEFT_ARROW, KEY_RIGHT_ARROW, KEY_LEFT_CTRL, KEY_LEFT_ALT, ' ' };
+  char movesFSUAE[]  = { KEY_UP_ARROW, KEY_DOWN_ARROW, KEY_LEFT_ARROW, KEY_RIGHT_ARROW, KEY_RIGHT_CTRL, KEY_RIGHT_ALT, ' ' };
+
+  if( settings[kSettingMode] == kModeJoyWASD ) moves = movesWASD;
+  if( settings[kSettingMode] == kModeJoyHJKL ) moves = movesHJKL;
+  if( settings[kSettingMode] == kModeJoyStella ) moves = movesStella;
+  if( settings[kSettingMode] == kModeJoyMame ) moves = movesMame;
+  if( settings[kSettingMode] == kModeJoyFSUAE ) moves = movesFSUAE;
+
+  lastU = keyHelper( u, lastU, moves[0] );
+  lastD = keyHelper( d, lastD, moves[1] );
+  lastL = keyHelper( l, lastL, moves[2] );
+  lastR = keyHelper( r, lastR, moves[3] );
+  lastB1 = keyHelper( b1, lastB1, moves[4] );
+  lastB2 = keyHelper( b2, lastB2, moves[5] );
+  lastB3 = keyHelper( b3, lastB3, moves[6] );
 }
