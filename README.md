@@ -15,8 +15,9 @@ and USB mouse.
 It has the following supported ports:
 
 - D9 Male mouse/joystick port
-- RJ-22 Amiga 1000 Keyboard port
-- alternately, DIN connector can be used for A2000 keyboard
+- 4P4C (RJ-22) Amiga 1000 Keyboard port
+- or, 5-Pin DIN connector can be used for A2000/3000 keyboard
+- or, 6-Pin mini-DIN for A4000 keyboard
 
 It supports the following schemes:
 
@@ -43,8 +44,8 @@ places at about $2 for a Pro Micro.)
 The additional hardware necessary to hook these boards up to a
 device is basically a male D9 connector, for the mouse or joystick
 to plug into.  For an Amiga keyboard interface, the necessary
-hardware would be an RJ-22 4P4C jack (telephone handset), DIN jack,
-or mini-din Jack for various Amiga keyboard models.  The native
+hardware would be an 4P4C (RJ-22) jack (telephone handset), 5-pin DIN jack,
+or 6-pin mini-DIN Jack for various Amiga keyboard models.  The native
 interface connection on the prototyped board uses the Amiga 500
 keyboard pinout, so that is also an option. (They all speak the
 same protocol.
@@ -93,10 +94,10 @@ signals found on the D9 connector's pin 1 and 4.
 
 ## Amiga Keyboard
 - Support for using an Amiga keyboard as a HID USB keyboard
- - A1000, A2000, A500 keyboards all use the same protocol, but different connectors and pinouts.
+ - All Amiga keyboards all use the same protocol, but different connectors 
  - My hardware uses an 8 position header for the interface, wired as an A500 keyboard port
  - Interface cables can be made to connect to 
-  - Amiga 1000 keyboards (RJ-22 4P4C jack)
-  - Amiga 2000 keyboards (TBD position DIN jack)
-  - Amiga 3000 keyboards (TBD position mini-DIN jack)
+  - Amiga 1000 keyboards (4P4C (RJ-22) jack)
+  - Amiga 2000,3000 keyboards (5-pin DIN jack)
+  - Amiga 4000 keyboards (6-pin mini-DIN jack)
    
