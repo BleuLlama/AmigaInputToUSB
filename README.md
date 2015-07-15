@@ -110,6 +110,20 @@ modular, chainable board, where you plug one into the next.  Make
 emulated... or make 3, use two for user joysticks, one for Mouse
 input, etc.
 
+# Joystick Support:
+## Supported
+- Atari 2600 VCS - supported
+- Atari 7800 - somewhat supported (uses B2, B3)
+
+## Could be supported with code rework (not currently supported)
+- Odyssey - Possible, requires rework of the code
+
+## Require rewiring to work (not supported)
+- TI 99/4A - Not possible. Requires rewiring
+- Sega Master System - Requires 5v on pin 5
+- Sega Genesis - Requires 5v on pin 5, rework
+- Sega Saturn - Requires rewiring and code rework
+
 # Current Status Notes
 
 (2015/07/15) The initial version is done, minus keyboard support.
@@ -150,4 +164,3 @@ If the valid transitions only happen in the (1,3) and (2,4)
 pairs, then it is an Amiga Mouse.  If the valid transitions only
 happen in the (1,2) and (3,4) pairs, then we know it's an Atari
 mouse.
-
