@@ -1,8 +1,7 @@
 # Amiga Input To USB
 
 This is a project to connect a Commodore Amiga mouse, joystick
-(Atari compatible) and maybe an Amiga Keyboard as USB HID
-devices.
+(Atari compatible) and maybe an Amiga Keyboard as USB HID devices.
 
 # Overview
 
@@ -44,11 +43,11 @@ places at about $2 for a Pro Micro.)
 The additional hardware necessary to hook these boards up to a
 device is basically a male D9 connector, for the mouse or joystick
 to plug into.  For an Amiga keyboard interface, the necessary
-hardware would be an 4P4C (RJ-22) jack (telephone handset), 5-pin DIN jack,
-or 6-pin mini-DIN Jack for various Amiga keyboard models.  The native
-interface connection on the prototyped board uses the Amiga 500
-keyboard pinout, so that is also an option. (They all speak the
-same protocol.
+hardware would be an 4P4C (RJ-22) jack (telephone handset), 5-pin
+DIN jack, or 6-pin mini-DIN Jack for various Amiga keyboard models.
+The native interface connection on the prototyped board uses the
+Amiga 500 keyboard pinout, so that is also an option. (They all
+speak the same protocol.
 
 When plugged in, the device will appear to be a USB Keyboard, USB
 Mouse and USB Serial Port.  (The serial port is used for configuration.)
@@ -100,4 +99,55 @@ signals found on the D9 connector's pin 1 and 4.
   - Amiga 1000 keyboards (4P4C (RJ-22) jack)
   - Amiga 2000,3000 keyboards (5-pin DIN jack)
   - Amiga 4000 keyboards (6-pin mini-DIN jack)
-   
+
+# Future possibilities/features
+- Autodetect Amiga Mouse / Atari Mouse / Atari Joystick (See below) 
+- Pushbuttons with 7 segment display to select mode without serial interface
+- N port input (instead of 1 port) via use of a series of 8 bit
+parallel in, serial out shift register (74HC165).  This could be a
+modular, chainable board, where you plug one into the next.  Make
+4 identical boards so that Atari 800 M.U.L.E. would be properly
+emulated... or make 3, use two for user joysticks, one for Mouse
+input, etc.
+
+# Current Status Notes
+
+(2015/07/15) The initial version is done, minus keyboard support.
+I've been having power problems getting the Amiga keyboards to be
+powerable off of the Arduino/USB power.
+
+I need to make a small 8 pin adapter to "inject" power into the
+cord for the keyboards.  Then I need to figure out how to properly
+read from the keyboard and adapt it appropriately.  There is example
+code which I've included in this project that does this, however,
+I may end up rewriting it from scratch to get a better understanding
+of how it works.
+
+Last night I did sketch out ideas in figuring out how to autodetect
+between Atari Joystick, Amiga Mouse and Atari Mouse.  I think that 
+just by doing some simple analysis of the signals coming in, it 
+should be possible to determine the device type.  When it powers on,
+the device will go into a "detection" state.  In this state, it waits for 
+N changes for the U/D/L/R or V/H/VQ/HQ (Amiga) or HQ/H/VQ/V (Atari) 
+data bits.  By profiling these, it should be trivial to detect between 
+mouse and joystick.  By profiling a little more, it should be possible 
+to detect between Atari and Amiga mice. 
+
+If we look at the signal sets, we can determine easily if it's not 
+a joystick.  On a joystick it is impossible for (Up and Down) to be
+low at the same time... same with (Left and Right).  If we ever see 
+a case where either of those two situations occur, we know it's not a
+joystick.
+
+From there, we can profile the data in 4 pairs: (1,3), (2,4), (1,2),
+(3,4).  By looking at the data, we can determine which of those
+four have had only valid transition sequences: (forward or backwards
+in the following two bit gray code sequence)
+
+	00 - 01 - 11 - 10 - 00
+
+If the valid transitions only happen in the (1,3) and (2,4)
+pairs, then it is an Amiga Mouse.  If the valid transitions only
+happen in the (1,2) and (3,4) pairs, then we know it's an Atari
+mouse.
+
