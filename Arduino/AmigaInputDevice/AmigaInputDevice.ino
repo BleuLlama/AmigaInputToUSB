@@ -17,9 +17,10 @@
 //  No warranty blah blah blah.
 
 
-#define VERSTRING "006 2015-0713"
+#define VERSTRING "007 2015-0720"
 // version history
 //
+// v 007  2015-07-20  Atari ST Mouse support tested.  Pin define cleanups
 // v 006  2015-07-13  Joystick-Keypress support complete with various preset configurations
 // v 005  2015-07-12  EEprom saving of settings
 // v 004  2015-07-04  Serial Control Shell
@@ -51,36 +52,45 @@
 	NOTE: Also tie D6, D7, D8 to VCC via 10k Ohm resistor (tentative)
 
 	NOTE: for Atari mouse, signals on D9 pins 1 and 4 functionality are swapped (in software)
-
+              then, pins 3 and 4 are swapped to invert the mouse vertical
 */
 ////////////////////////////////////////////////////////////////////////////////
 
 #include <EEPROM.h>
 
+// how the D9 is connected to data pins...
+#define kD9_1  (6)
+#define kD9_2  (5)
+#define kD9_3  (4)
+#define kD9_4  (3)
+#define kD9_5  (2)
+#define kD9_6  (7)
+/* pins 7,8 are connected to power, ground */
+#define kD9_9  (14) 
 
-// pin configurations
+// pin configurations (how it's wired to logical signal lines...)
 //	Mouse X and Y quadrature pins
-#define kMouseXa (5)
-#define kMouseXb (3)
-#define kMouseYa (6)
-#define kMouseYb (4)
+#define kMouseAmigaV (kD9_1) /* V  */
+#define kMouseAmigaH (kD9_2) /* H  */
+#define kMouseAmigaVQ (kD9_3) /* VQ */
+#define kMouseAmigaHQ (kD9_4) /* HQ */
 
 // Atari mouse
-#define kAtariMouseXa (5)
-#define kAtariMouseXb (6)
-#define kAtariMouseYa (3)
-#define kAtariMouseYb (4)
+#define kAtariMouseXb (kD9_1)
+#define kAtariMouseXa (kD9_2)
+#define kAtariMouseYa (kD9_3)
+#define kAtariMouseYb (kD9_4)
 
 //	Mouse buttons
-#define kMouseB1 (7)
-#define kMouseB2 (14)
-#define kMouseB3 (2)
+#define kMouseB1 (kD9_6)  /* left button */
+#define kMouseB2 (kD9_9)  /* right button */
+#define kMouseB3 (kD9_5)  /* middle button */
 
 //	Joystick pins
-#define kJoyUp    (6)
-#define kJoyDown  (5)
-#define kJoyLeft  (4)
-#define kJoyRight (3)
+#define kJoyUp    (kD9_1)
+#define kJoyDown  (kD9_2)
+#define kJoyLeft  (kD9_3)
+#define kJoyRight (kD9_4)
 
 // on-board LED pin
 #define kLED (17)
@@ -189,10 +199,10 @@ int historyPos=0; // current write position in the history
 void initGrayMouse( void )
 {
   // set the mouse and button inputs
-  pinMode( kMouseXa, INPUT );
-  pinMode( kMouseXb, INPUT );
-  pinMode( kMouseYa, INPUT );
-  pinMode( kMouseXb, INPUT );
+  pinMode( kMouseAmigaH, INPUT );
+  pinMode( kMouseAmigaHQ, INPUT );
+  pinMode( kMouseAmigaV, INPUT );
+  pinMode( kMouseAmigaHQ, INPUT );
   pinMode( kMouseB1, INPUT_PULLUP );
   pinMode( kMouseB2, INPUT_PULLUP );
   pinMode( kMouseB3, INPUT_PULLUP );
@@ -482,13 +492,13 @@ void loopGrayMouse()
   
   if( settings[kSettingMode] == kModeAmigaMouse ) {
     // amiga mouse
-    hq = (digitalRead( kMouseXa ) << 1) | digitalRead( kMouseXb );
-    vq = (digitalRead( kMouseYa ) << 1) | digitalRead( kMouseYb );
+    hq = (digitalRead( kMouseAmigaH ) << 1) | digitalRead( kMouseAmigaHQ );
+    vq = (digitalRead( kMouseAmigaV ) << 1) | digitalRead( kMouseAmigaVQ );
     
   } else if( settings[kSettingMode] == kModeAtariMouse ) {
     // atari mouse ( Xb, Ya swapped wrt Amiga mouse )
     hq = (digitalRead( kAtariMouseXa ) << 1) | digitalRead( kAtariMouseXb );
-    vq = (digitalRead( kAtariMouseYa ) << 1) | digitalRead( kAtariMouseYb );
+    vq = (digitalRead( kAtariMouseYb ) << 1) | digitalRead( kAtariMouseYa );  /* vertical swapped! */
   }
   
   // check horizontal delta
