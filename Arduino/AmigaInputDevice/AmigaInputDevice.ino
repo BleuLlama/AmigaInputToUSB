@@ -115,7 +115,9 @@ char settings[kNSettings];
 #define kModeJoyStella  (5) /* convert to arrow keys, space, 4, 5 */
 #define kModeJoyWASD    (6) /* convert to WASD keys */
 #define kModeJoyHJKL    (7) /* convert to vi hjkl keys */
-#define kModeMax (kModeJoyHJKL)
+
+#define kModeExplore    (8) /* Exploration of ideas... */
+#define kModeMax (kModeExplore)
 
 
 // ----------------------------------------
@@ -199,10 +201,10 @@ int historyPos=0; // current write position in the history
 void initGrayMouse( void )
 {
   // set the mouse and button inputs
-  pinMode( kMouseAmigaH, INPUT );
-  pinMode( kMouseAmigaHQ, INPUT );
-  pinMode( kMouseAmigaV, INPUT );
-  pinMode( kMouseAmigaHQ, INPUT );
+  pinMode( kMouseXa, INPUT_PULLUP );
+  pinMode( kMouseXb, INPUT_PULLUP );
+  pinMode( kMouseYa, INPUT_PULLUP );
+  pinMode( kMouseXb, INPUT_PULLUP );
   pinMode( kMouseB1, INPUT_PULLUP );
   pinMode( kMouseB2, INPUT_PULLUP );
   pinMode( kMouseB3, INPUT_PULLUP );
@@ -248,6 +250,7 @@ void switchMode( int mmmm )
     case( kModeJoyStella ):
     case( kModeJoyWASD ):
     case( kModeJoyHJKL ):
+    case( kModeExplore ):
       initJoystick();
       break;
   }
@@ -320,6 +323,8 @@ void dumpMode()
     case( kModeJoyStella ):  Serial.println( "Atari Joystick as Arrow/ /4/5 (Stella)" ); break;
     case( kModeJoyWASD ):    Serial.println( "Atari joystick as WASD keys" ); break;
     case( kModeJoyHJKL ):    Serial.println( "Atari joystick as vi (hjkl) keys" ); break;
+    
+    case( kModeExplore ):    Serial.println( "Controller explorer" ); break;
     default: break;
   }
 }
@@ -344,6 +349,8 @@ void serialShell()
       Serial.println( " 5  Joystick as Stella Keyboard (arrows/ /4/5)" );
       Serial.println( " 6  Joystick as WASD Keyboard (w/s/a/d)" );
       Serial.println( " 7  Joystick as vi Keyboard (h/j/k/l)" );
+      
+      Serial.println( " 8  Controller Explorer" );
 
       Serial.println( "" );
       Serial.println( "Other options:" );
@@ -398,6 +405,10 @@ void loop() {
     case( kModeJoyWASD ):
     case( kModeJoyHJKL ):
       loopJoyKeys();
+      break;
+    
+    case( kModeExplore ):
+      loopExplore();
       break;
       
     default:
@@ -611,4 +622,59 @@ void loopJoyKeys()
   lastB1 = keyHelper( b1, lastB1, moves[4] );
   lastB2 = keyHelper( b2, lastB2, moves[5] );
   lastB3 = keyHelper( b3, lastB3, moves[6] );
+}
+
+//////////////////////////////////////////////////////
+
+bool isJoystick = true;
+bool maybeAtari = false;
+bool maybeAmiga = false;
+
+void loopExplore()
+{
+  static int nTransitions = 0;
+  static char lastData = 0xff;
+  char data = 0x00;
+
+  // read all 4 bits
+  char u = digitalRead( kJoyUp )   ? 0 : 1;
+  char d = digitalRead( kJoyDown ) ? 0 : 1;
+  char l = digitalRead( kJoyLeft ) ? 0 : 1; 
+  char r = digitalRead( kJoyRight )? 0 : 1;
+  
+  // combine them so we can easily detect change
+  data = u | (d<<1) | (l<<2) | (r<<3);
+  
+  if( data != lastData ) {
+    Serial.print( nTransitions++ );
+    Serial.print( ": " );
+
+    // atari pairings
+    Serial.print( u, DEC );
+    Serial.print( d, DEC );
+    Serial.print( " " );
+    Serial.print( l, DEC );
+    Serial.print( r, DEC );
+
+    // amiga pairings
+    Serial.print( "  " );
+    Serial.print( r, DEC );
+    Serial.print( d, DEC );
+    Serial.print( " " );
+    Serial.print( l, DEC );
+    Serial.print( u, DEC );
+
+    
+    // up+down or left+right are not possible on a joystick
+    if( u && d ) isJoystick = false;
+    if( l && r ) isJoystick = false;
+    
+    Serial.print( "  " );
+    if( isJoystick ) Serial.print( " Joystick  " );
+    if( maybeAtari ) Serial.print( " Atari " );
+    if( maybeAmiga ) Serial.print( " Amiga " );
+    if( !isJoystick ) Serial.print( " Mouse" );
+    Serial.println();
+    lastData = data;
+  }
 }
