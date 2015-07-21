@@ -12,7 +12,7 @@
 //	https://github.com/BleuLlama/AmigaInputToUSB
 //
 //  Wiring diagram and such will be available there in image form
-//
+//e
 //  This is distributed under the MIT license.
 //  No warranty blah blah blah.
 
@@ -52,7 +52,6 @@
 	NOTE: Also tie D6, D7, D8 to VCC via 10k Ohm resistor (tentative)
 
 	NOTE: for Atari mouse, signals on D9 pins 1 and 4 functionality are swapped (in software)
-              then, pins 3 and 4 are swapped to invert the mouse vertical
 */
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -69,11 +68,11 @@
 #define kD9_9  (14) 
 
 // pin configurations (how it's wired to logical signal lines...)
-//	Mouse X and Y quadrature pins
-#define kMouseAmigaV (kD9_1) /* V  */
-#define kMouseAmigaH (kD9_2) /* H  */
-#define kMouseAmigaVQ (kD9_3) /* VQ */
-#define kMouseAmigaHQ (kD9_4) /* HQ */
+// Amiga Mouse
+#define kMouseAmigaV  (kD9_1)
+#define kMouseAmigaH  (kD9_2)
+#define kMouseAmigaVQ (kD9_3)
+#define kMouseAmigaHQ (kD9_4)
 
 // Atari mouse
 #define kAtariMouseXb (kD9_1)
@@ -81,12 +80,12 @@
 #define kAtariMouseYa (kD9_3)
 #define kAtariMouseYb (kD9_4)
 
-//	Mouse buttons
+// Mouse buttons (common for both)
 #define kMouseB1 (kD9_6)  /* left button */
 #define kMouseB2 (kD9_9)  /* right button */
 #define kMouseB3 (kD9_5)  /* middle button */
 
-//	Joystick pins
+// Joystick pins
 #define kJoyUp    (kD9_1)
 #define kJoyDown  (kD9_2)
 #define kJoyLeft  (kD9_3)
@@ -125,6 +124,15 @@ char settings[kNSettings];
 // setup - initialize the hardware
 void setup() {
   pinMode( kLED, OUTPUT );
+  
+    // set the mouse and button inputs
+  pinMode( kD9_1, INPUT_PULLUP );
+  pinMode( kD9_2, INPUT_PULLUP );
+  pinMode( kD9_3, INPUT_PULLUP );
+  pinMode( kD9_4, INPUT_PULLUP );
+  pinMode( kD9_5, INPUT_PULLUP );
+  pinMode( kD9_6, INPUT_PULLUP );
+  pinMode( kD9_9, INPUT_PULLUP );
   
   // put your setup code here, to run once:
   Serial.begin( 9600 );
@@ -200,15 +208,6 @@ int historyPos=0; // current write position in the history
 // initialize for gray code mouse 
 void initGrayMouse( void )
 {
-  // set the mouse and button inputs
-  pinMode( kMouseXa, INPUT_PULLUP );
-  pinMode( kMouseXb, INPUT_PULLUP );
-  pinMode( kMouseYa, INPUT_PULLUP );
-  pinMode( kMouseXb, INPUT_PULLUP );
-  pinMode( kMouseB1, INPUT_PULLUP );
-  pinMode( kMouseB2, INPUT_PULLUP );
-  pinMode( kMouseB3, INPUT_PULLUP );
-  
   // clear the history
   for( int h=0 ; h<128 ; h++ ) {
     history_x[h] = history_y[h] = 0;
@@ -218,15 +217,6 @@ void initGrayMouse( void )
 // initialize for gray code mouse 
 void initJoystick( void )
 {
-  // set the mouse and button inputs
-  pinMode( kJoyUp, INPUT_PULLUP );
-  pinMode( kJoyDown, INPUT_PULLUP );
-  pinMode( kJoyLeft, INPUT_PULLUP );
-  pinMode( kJoyRight, INPUT_PULLUP );
-  pinMode( kMouseB1, INPUT_PULLUP );
-  pinMode( kMouseB2, INPUT_PULLUP );
-  pinMode( kMouseB3, INPUT_PULLUP );
-  
   // clear the history
   for( int h=0 ; h<128 ; h++ ) {
     history_x[h] = history_y[h] = 0;
