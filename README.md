@@ -1,22 +1,24 @@
 # Amiga Input To USB
 
-This is a project to connect a Commodore Amiga mouse, joystick
-(Atari compatible) and maybe an Amiga Keyboard as USB HID devices.
+This is a project to connect a Commodore Amiga mouse, Atari joystick
+and maybe an Amiga Keyboard as USB HID devices.
 
 # Overview
 
 The purpose of this project is to make and document a small,
 inexpensive device that you can use to hook up some Commodore Amiga
-(and Atari) input peripherals to modern computers with USB inputs.
-It presents itself to the modern host computer as a USB keyboard
-and USB mouse.
+and Atari input peripherals to modern computers with USB inputs.
+It presents itself to the modern host computer as a HID USB keyboard
+and HID USB mouse.
 
 It has the following supported ports:
 
 - D9 Male mouse/joystick port
-- 4P4C (RJ-22) Amiga 1000 Keyboard port
-- or, 5-Pin DIN connector can be used for A2000/3000 keyboard
-- or, 6-Pin mini-DIN for A4000 keyboard
+- 8 pin Amiga 500 keyboard port. (future)
+- Adapters can be made for: 
+ - 4P4C (RJ-22) Amiga 1000 Keyboard port
+ - 5-Pin DIN connector can be used for A2000/3000 keyboard
+ - 6-Pin mini-DIN for A4000 keyboard
 
 It supports the following schemes:
 
@@ -24,7 +26,7 @@ It supports the following schemes:
 - Atari mouse as HID mouse
 - Atari Joystick as HID mouse
 - Atari Joystick as various HID Keyboard control sets
-- Amiga Keyboard as HID Keyboard (stretch goal)
+- Amiga Keyboard as HID Keyboard (future)
 
 This was originally made for the http://retrochallenge.org Retro
 Challenge 2015/7.
@@ -70,8 +72,11 @@ signals found on the D9 connector's pin 1 and 4.
 ## Amiga Mouse full implementation (complete)
 - Left, Right, Middle Mouse button supported
 - Movement with reasonable acceleration
-- NOTE: swapping two lines XB and YA in the code will let this work for Atari mice too.
-  - in implementation this means data for D9 pins 1 and 4 need to be swapped
+
+## Atari ST Mouse full implementation (complete 7/20)
+- Left, Right buttons supported
+- Movement with reasonable acceleration
+- pin defines operate the same as Amiga mouse but D9.1 and D9.4 are swapped
 
 ## Atari Joystick as mouse (complete)
 - Joystick movement translated to Mouse movements (like joymouse)
@@ -91,7 +96,7 @@ signals found on the D9 connector's pin 1 and 4.
  - WASD: WASD for movement, space bar, ctrl, shift
  - vi: HJKL for movement, (yes, it's a joke. yes, it's usable!)
 
-## Amiga Keyboard
+## Amiga Keyboard (future)
 - Support for using an Amiga keyboard as a HID USB keyboard
  - All Amiga keyboards all use the same protocol, but different connectors 
  - My hardware uses an 8 position header for the interface, wired as an A500 keyboard port
@@ -126,9 +131,19 @@ input, etc.
 
 # Current Status Notes
 
-(2015/07/15) The initial version is done, minus keyboard support.
-I've been having power problems getting the Amiga keyboards to be
-powerable off of the Arduino/USB power.
+### 2015/07/20
+
+My Atari ST mouse has arrived in the mail today! I have tweaked
+the code, cleaned it up a little, and confirmed that it works
+with this mouse.  Images have been added to the project to
+show the Leonardo hookup diagram, as well as diagrams for
+converting between Amiga and Atari mice.
+
+### 2015/07/15
+
+The initial version is done, minus keyboard support.  I've been
+having power problems getting the Amiga keyboards to be powerable
+off of the Arduino/USB power.
 
 I need to make a small 8 pin adapter to "inject" power into the
 cord for the keyboards.  Then I need to figure out how to properly
