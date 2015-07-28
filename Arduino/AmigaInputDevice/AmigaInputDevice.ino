@@ -17,9 +17,10 @@
 //  No warranty blah blah blah.
 
 
-#define VERSTRING "007 2015-0720"
+#define VERSTRING "008 2015-0728"
 // version history
 //
+// v 008  2015-07-28 
 // v 007  2015-07-20  Atari ST Mouse support tested.  Pin define cleanups
 // v 006  2015-07-13  Joystick-Keypress support complete with various preset configurations
 // v 005  2015-07-12  EEprom saving of settings
@@ -33,19 +34,19 @@
 /*
 	hookup info (tentative)
 
-		Amiga	Atari
-	D9 pin	Mouse	Joystick	Arduino Pin
+		Amiga	Atari   Atari
+	D9 pin	Mouse	Mouse   Joystick	Arduino Pin
 
-	1	V	Forward		D6
-	2	H	Backward	D5
-	3	VQ	Left		D4
-	4	HQ	Right		D3
-	5	M But	n/c		D2
+	1	V	Xb      Forward		D6
+	2	H	Xa      Backward	D5
+	3	VQ	Ya      Left		D4
+	4	HQ	Yb      Right		D3
+	5	M But	n/c     n/c		D2
 
-	6	L But	Button 1	D7
-	7	+5V			(VCC)
-	8	GND			(GND)
-	9	R But	Button 2	D14
+	6	L But	L But   Button 1	D7
+	7	+5V	+5V      		(VCC)
+	8	GND	GND      		(GND)
+	9	R But	R But   Button 2	D14
 
 	Keyboard (TBD)
 
@@ -140,6 +141,7 @@ void setup() {
   Keyboard.begin(); // for USB HID Keyboard support
   
   loadSettings();
+  resetExplore();
 }
 
 void loadSettings( void )
@@ -341,6 +343,7 @@ void serialShell()
       Serial.println( " 7  Joystick as vi Keyboard (h/j/k/l)" );
       
       Serial.println( " 8  Controller Explorer" );
+      Serial.println( " r  Reset the Explorer" );
 
       Serial.println( "" );
       Serial.println( "Other options:" );
@@ -349,6 +352,10 @@ void serialShell()
       Serial.println( " m  Display use mode." );
       Serial.println( " d  Dump settings from EEPROM." );
       Serial.println( " i  initialize settings in EEPROM." );
+    }
+    if( ch == 'r' ) {
+      resetExplore();
+      Serial.println( "Explorer reset." );
     }
     if( ch == 'i' ) {
       defaultSettings();
@@ -619,45 +626,62 @@ void loopJoyKeys()
 bool isJoystick = true;
 bool maybeAtari = false;
 bool maybeAmiga = false;
+int nTransitions = 0;
+char lastData = 0xff;
+
+int nAtari = 0;
+int nAmiga = 0;
+unsigned char last13, last24,  last12, last34;
+
+void resetExplore()
+{
+  isJoystick = true;
+  maybeAtari = false;
+  maybeAmiga = false;
+  nTransitions = 0;
+  lastData = 0xff;
+  nAtari = 0;
+  nAmiga = 0;
+  
+  last13 = last24 = last12 = last34 = 0x00;
+}
 
 void loopExplore()
 {
-  static int nTransitions = 0;
-  static char lastData = 0xff;
   char data = 0x00;
 
   // read all 4 bits
-  char u = digitalRead( kJoyUp )   ? 0 : 1;
-  char d = digitalRead( kJoyDown ) ? 0 : 1;
-  char l = digitalRead( kJoyLeft ) ? 0 : 1; 
-  char r = digitalRead( kJoyRight )? 0 : 1;
+  char d1 = digitalRead( kJoyUp )   ? 0 : 1;
+  char d2 = digitalRead( kJoyDown ) ? 0 : 1;
+  char d3 = digitalRead( kJoyLeft ) ? 0 : 1; 
+  char d4 = digitalRead( kJoyRight )? 0 : 1;
   
   // combine them so we can easily detect change
-  data = u | (d<<1) | (l<<2) | (r<<3);
+  data = d1 | (d2<<1) | (d3<<2) | (d4<<3);
   
   if( data != lastData ) {
     Serial.print( nTransitions++ );
     Serial.print( ": " );
 
     // atari pairings
-    Serial.print( u, DEC );
-    Serial.print( d, DEC );
+    Serial.print( d1, DEC );
+    Serial.print( d2, DEC );
     Serial.print( " " );
-    Serial.print( l, DEC );
-    Serial.print( r, DEC );
+    Serial.print( d3, DEC );
+    Serial.print( d4, DEC );
 
     // amiga pairings
     Serial.print( "  " );
-    Serial.print( r, DEC );
-    Serial.print( d, DEC );
+    Serial.print( d4, DEC );
+    Serial.print( d2, DEC );
     Serial.print( " " );
-    Serial.print( l, DEC );
-    Serial.print( u, DEC );
+    Serial.print( d3, DEC );
+    Serial.print( d1, DEC );
 
     
     // up+down or left+right are not possible on a joystick
-    if( u && d ) isJoystick = false;
-    if( l && r ) isJoystick = false;
+    if( d1 && d2 ) isJoystick = false;
+    if( d3 && d4 ) isJoystick = false;
     
     Serial.print( "  " );
     if( isJoystick ) Serial.print( " Joystick  " );
