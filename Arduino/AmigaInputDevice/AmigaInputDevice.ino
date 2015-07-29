@@ -643,7 +643,8 @@ void resetExplore()
   nAtari = 0;
   nAmiga = 0;
   
-  last13 = last24 = last12 = last34 = 0x00;
+  last13 = last24 = 0x00; // Amiga
+  last12 = last34 = 0x00; // Atari
 }
 
 void loopExplore()
@@ -655,6 +656,47 @@ void loopExplore()
   char d2 = digitalRead( kJoyDown ) ? 0 : 1;
   char d3 = digitalRead( kJoyLeft ) ? 0 : 1; 
   char d4 = digitalRead( kJoyRight )? 0 : 1;
+
+  char thisone;
+
+  // Amiga
+  // check 13
+  thisone = (d1? 2 : 0) | (d3? 1 : 0);
+  if( thisone != (last13 & 0x03)) {
+    last13 = ((last13 << 2 ) & 0xFC) | thisone;
+    // 01 11 10 00  0x78
+    // 10 11 01 00  0xB4
+    if( last13 == 0x78 || last13 == 0xB4 ) nAmiga++;
+  }
+
+  // check 24
+  thisone = (d2? 2 : 0) | (d4? 1 : 0);
+  if( thisone != (last24 & 0x03)) {
+    last24 = ((last24 << 2 ) & 0xFC) | thisone;
+    // 01 11 10 00  0x78
+    // 10 11 01 00  0xB4
+    if( last24 == 0x78 || last24 == 0xB4 ) nAmiga++;
+  }
+  
+  // Atari
+  // check 12
+  thisone = (d1? 2 : 0) | (d2? 1 : 0);
+  if( thisone != (last12 & 0x03)) {
+    last12 = ((last12 << 2 ) & 0xFC) | thisone;
+    // 01 11 10 00  0x78
+    // 10 11 01 00  0xB4
+    if( last12 == 0x78 || last12 == 0xB4 ) nAtari++;
+  }
+  
+  // check 34
+  thisone = (d3? 2 : 0) | (d4? 1 : 0);
+  if( thisone != (last34 & 0x03)) {
+    last34 = ((last34 << 2 ) & 0xFC) | thisone;
+    // 01 11 10 00  0x78
+    // 10 11 01 00  0xB4
+    if( last34 == 0x78 || last34 == 0xB4 ) nAtari++;
+  }
+
   
   // combine them so we can easily detect change
   data = d1 | (d2<<1) | (d3<<2) | (d4<<3);
@@ -664,30 +706,44 @@ void loopExplore()
     Serial.print( ": " );
 
     // atari pairings
+    Serial.print( "Atari " );
     Serial.print( d1, DEC );
     Serial.print( d2, DEC );
     Serial.print( " " );
     Serial.print( d3, DEC );
     Serial.print( d4, DEC );
+    Serial.print( " " );
+    Serial.print( nAtari );
 
     // amiga pairings
-    Serial.print( "  " );
+    Serial.print( "   Amiga " );
     Serial.print( d4, DEC );
     Serial.print( d2, DEC );
     Serial.print( " " );
     Serial.print( d3, DEC );
     Serial.print( d1, DEC );
-
+    Serial.print( " " );
+    Serial.print( nAmiga );
+    
+    if( nAtari > nAmiga ) {
+      maybeAtari = true;
+      maybeAmiga = false;
+    } else {
+      maybeAtari = false;
+      maybeAmiga = true;
+    }
     
     // up+down or left+right are not possible on a joystick
     if( d1 && d2 ) isJoystick = false;
     if( d3 && d4 ) isJoystick = false;
     
     Serial.print( "  " );
-    if( isJoystick ) Serial.print( " Joystick  " );
-    if( maybeAtari ) Serial.print( " Atari " );
-    if( maybeAmiga ) Serial.print( " Amiga " );
-    if( !isJoystick ) Serial.print( " Mouse" );
+    if( isJoystick ) {
+      Serial.print( " Joystick  " );
+    } else {
+      if( maybeAtari ) Serial.print( " Atari Mouse" );
+      if( maybeAmiga ) Serial.print( " Amiga Mouse" );
+    }
     Serial.println();
     lastData = data;
   }
