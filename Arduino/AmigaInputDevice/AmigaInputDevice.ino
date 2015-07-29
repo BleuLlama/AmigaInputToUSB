@@ -102,6 +102,8 @@ char settings[kNSettings];
 // 0..2 are 'S' 'D' 'L' (Sentinel)
 #define kSettingVers (3) // settings version
 #define kSettingMode (4) // D9 Port usage mode
+#define kSettingDevice  (5)
+#define kSettingOutputs (6) 
 
 /////////////////////////////
 // usage modes

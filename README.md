@@ -61,8 +61,8 @@ on.  for negative movement, it outputs the sequence 00 10 11 01 00
 etc.  By sitting in a tight loop, we can determine these X and Y
 movements, and output them using the Arduino's Mouse library.
 
-Those two function identically, although the Atari mouse swaps the
-signals found on the D9 connector's pin 1 and 4.
+Those two function identically, although the Atari mouse essentially
+swaps the wiring found on the D9 connector's pin 1 and 4.
 
 # Development Phases
 
@@ -73,7 +73,7 @@ signals found on the D9 connector's pin 1 and 4.
 - Left, Right, Middle Mouse button supported
 - Movement with reasonable acceleration
 
-## Atari ST Mouse full implementation (complete 7/20)
+## Atari ST Mouse full implementation (complete)
 - Left, Right buttons supported
 - Movement with reasonable acceleration
 - pin defines operate the same as Amiga mouse but D9.1 and D9.4 are swapped
@@ -83,12 +83,12 @@ signals found on the D9 connector's pin 1 and 4.
 - Joystick button(s) convert to mouse button presses
 - Movement with reasonable acceleration
 
-## Serial configuration (complete 7/12)
+## Serial configuration (complete)
 - simple serial shell to change configuration parameters
 - display currently configured modes
 - stored in EEPROM
 
-## Atari Joystick as keyboard (complete 7/13)
+## Atari Joystick as keyboard (complete)
 - Joytick movements mapped as keyboard
 - Support via preset key configurations for: FS-UAE, Mame, Stella, Vice, WASD, and vi
  - FS-UAE: Arrow keys for movement, right ctrl, right alt for buttons
@@ -96,7 +96,10 @@ signals found on the D9 connector's pin 1 and 4.
  - WASD: WASD for movement, space bar, ctrl, shift
  - vi: HJKL for movement, (yes, it's a joke. yes, it's usable!)
 
-## Amiga Keyboard (future)
+## Autodetect Input Device (in progress)
+- Start up in this mode, it will automatically figure out if there is an Atari Mouse, Atari Joystick or Amiga mouse plugged in based on the first few movements.
+
+## Amiga Keyboard (future, maybe)
 - Support for using an Amiga keyboard as a HID USB keyboard
  - All Amiga keyboards all use the same protocol, but different connectors 
  - My hardware uses an 8 position header for the interface, wired as an A500 keyboard port
@@ -106,7 +109,6 @@ signals found on the D9 connector's pin 1 and 4.
   - Amiga 4000 keyboards (6-pin mini-DIN jack)
 
 # Future possibilities/features
-- Autodetect Amiga Mouse / Atari Mouse / Atari Joystick (See below) 
 - Pushbuttons with 7 segment display to select mode without serial interface
 - N port input (instead of 1 port) via use of a series of 8 bit
 parallel in, serial out shift register (74HC165).  This could be a
@@ -129,15 +131,79 @@ input, etc.
 - Sega Genesis - Requires 5v on pin 5, rework
 - Sega Saturn - Requires rewiring and code rework
 
-# Current Status Notes
+
+# Autodetect Feature Theory
+
+Essentially the idea is that we will profile sets of signals coming 
+in to determine what they look the most like.  
+
+Joystick data has pairs (up, down) and (left, right) which are
+mutually exclusive.  That means that you can never have it sending
+"up" and "down" at the same time. If we ever see anything like that,
+we know it's a mouse plugged in to the input.  Mice also generate
+a substantial amount more traffic.  1 second of mouse traffic might
+be 200 changes of data, whereas the same 1 second of Joystick traffic
+is only a few dozen changes.
+
+If it's a mouse, we can profile pairs of pins to determine if it's
+an Amiga or Atari ST mouse.  For each of the Amiga pairs (1,3) and (2,4)
+and similarly for each of the Atari pairs (1,2) and (3,4), we have an 
+8 bit value that contains the past 4 sequence changes.  The basic
+loop is something like this:
+
+	value = 0;
+	// store 1,2 as the bottom two bits of "value"
+	if( readPin(1) ) value |= 0010
+	if( readPin(2) ) value |= 0001
+
+	// the bottom most 3 bits of "last value" are the 
+	// previous value.
+	if( (lastValue & 0000 0011) != value ))
+	{
+		// it was different.
+		// shift last value over, add the current value to it
+		lastValue = (lastValue <<2 ) & 1111 1100;
+		lastValue |= value;
+
+		// now the tricky part, we do simple checks for the 
+		// last 4 history values (aka "lastValue") for 
+		// something that looks like a mouse gray code sequence
+	
+		if(   ( lastValue == 10 11 01 00 ) 
+		   || ( lastValue == 01 11 10 00 ) ) {
+			// it was an Atari ST Mouse sequence
+			atariTransitionDetected++;
+		}
+	}
+	
+
+We do this for all four pairs of the possible quadrature/gray code
+sequences.  We certainly get a bunch of false positives, but we get
+substantially more true positives.
+
+After reading a hundred or so readings, we can easily tell by
+comparing "atariTransitionDetected" with "amigaTransitionDetected"
+to know which it is.  There is a substantial difference between
+them.  It is remarkably reliable!
+
+
+# Current Status Notes Log
+
+### 2015/07/28
+
+Implemented the first run through of the autodetect code in the
+"explorer" section of the firmware, and determined that the idea
+actually works well!  I added the writeup above to explain the
+theory.  Now I just need to edit the firmware to work this in to
+the startup routine.
 
 ### 2015/07/20
 
-My Atari ST mouse has arrived in the mail today! I have tweaked
-the code, cleaned it up a little, and confirmed that it works
-with this mouse.  Images have been added to the project to
-show the Leonardo hookup diagram, as well as diagrams for
-converting between Amiga and Atari mice.
+My Atari ST mouse has arrived in the mail today! I have tweaked the
+code, cleaned it up a little, and confirmed that the firmware works
+with this mouse.  Images have been added to the project to show the
+Leonardo hookup diagram, as well as diagrams for converting between
+Amiga and Atari mice.
 
 ### 2015/07/15
 
